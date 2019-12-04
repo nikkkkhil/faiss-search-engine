@@ -1,0 +1,50 @@
+version: '3.7'
+
+services:
+  mongo:
+    image: ${DOCKER_PROXY}mongo:4.0
+    restart: on-failure
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+
+  mongo-express:
+    image: ${DOCKER_PROXY}mongo-express
+    restart: on-failure
+    depends_on:
+      - mongo
+    ports:
+      - 27018:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+
+  redis:
+    image: ${DOCKER_PROXY}redis
+    ports:
+      - 6379:6379
+    command: redis-server --appendonly yes
+    restart: on-failure
+
+  redis-commander:
+    image: ${DOCKER_PROXY}rediscommander/redis-commander:latest
+    restart: on-failure
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+
+  taranis:
+    image: ${DOCKER_PROXY}pletessier/taranis:0.1.1
+    restart: on-failure
+    command: "--config-file /opt/taranis/config.yaml"
+    ports:
+      - 8000:8000
+      - 50051:50051
+    environment:
+      TARANIS__db__mongo__host: mongo
+      TARANIS__db__redis__host: redis
